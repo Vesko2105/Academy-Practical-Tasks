@@ -1,14 +1,20 @@
 package org.softserve.game.units;
 
-import org.softserve.game.events.Handler;
-import org.softserve.game.events.Request;
+import org.softserve.game.events.cor.Handler;
+import org.softserve.game.events.cor.Request;
+import org.softserve.game.events.cor.RequestType;
 
 public class Healer extends Unit{
-    private static int MAX_HEALTH = 60;
-    private static int HEALING_POWER = 2;
-    private int MAX_MEDKITS = 20;
-    private int medKits = 20;
+    private int maxHealth = 60;
+    private int healingPower = 2;
+    private int maxMedkits = 20;
+    private int medkits = 20;
     private int healRegenerationCooldown = 3;
+
+    @Override
+    public int getMaxHealth() {
+        return maxHealth;
+    }
 
     public Healer(){
         super(60);
@@ -18,29 +24,27 @@ public class Healer extends Unit{
         if(!isAlive())
             return;
 
-        if(medKits < MAX_MEDKITS)
+        if(medkits < maxMedkits)
             healRegenerationCooldown--;
 
         if(healRegenerationCooldown == 0){
-            medKits = Math.min(MAX_MEDKITS, medKits + 1);
+            medkits = Math.min(maxMedkits, medkits + 1);
             healRegenerationCooldown = 3;
         }
 
-        if(medKits > 0 && unitToHeal.getHealth() < unitToHeal.getMaxHealth()){
-            unitToHeal.setHealth(Math.min(unitToHeal.getMaxHealth(), unitToHeal.getHealth() + HEALING_POWER));
-            medKits--;
+        if(medkits > 0 && unitToHeal.getHealth() < unitToHeal.getMaxHealth()){
+            unitToHeal.setHealth(Math.min(unitToHeal.getMaxHealth(), unitToHeal.getHealth() + healingPower));
+            medkits--;
         }
     }
 
     @Override
     public void handle(Request request, Handler sender) {
-        if(canHandle(request))
+        if(request.getType() == RequestType.HEAL){
             heal((Unit) sender);
+            passOnToNext(request, this);
+            return;
+        }
         super.handle(request, sender);
-    }
-
-    @Override
-    protected boolean canHandle(Request request) {
-        return request == Request.HEAL;
     }
 }

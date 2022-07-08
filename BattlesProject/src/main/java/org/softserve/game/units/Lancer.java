@@ -1,37 +1,45 @@
 package org.softserve.game.units;
 
-import org.softserve.game.damage.Damage;
 import org.softserve.game.damage.SimpleDamage;
+import org.softserve.game.events.cor.PierceHitRequest;
+import org.softserve.game.events.cor.RequestType;
 
-public class Lancer extends Warrior{
-    private static int MAX_HEALTH = 50;
-    private static int ATTACK = 6;
-    private static int PIERCE_POWER = 50;
+public class Lancer extends Warrior {
+    private int maxHealth = 50;
+    private int attack = 6;
+    private int piercePower = 50;
+    private int pierceThroughCount = 2;
 
-    public Lancer(){
+    public Lancer() {
         super(50);
     }
 
     @Override
     public int getMaxHealth() {
-        return MAX_HEALTH;
+        return maxHealth;
     }
 
     @Override
     public int getAttack() {
-        return ATTACK;
+        return attack;
+    }
+
+    public int getPierceThroughCount() {
+        return pierceThroughCount;
+    }
+
+    public int getPiercePower() {
+        return piercePower;
     }
 
     @Override
     public void hits(Unit enemy) {
-        int initialHealth = enemy.getHealth();
-        super.hits(enemy);
-        int healthAfter = enemy.getHealth();
-
-        Damage dmg = new SimpleDamage((initialHealth - healthAfter)*PIERCE_POWER/100);
-
-        Unit secondUnit = (Unit)enemy.getNext();
-        if(secondUnit != null)
-            secondUnit.hitBy(dmg);
+        enemy.handle(
+                new PierceHitRequest(getPierceThroughCount(),
+                                     getPiercePower(),
+                                     new SimpleDamage(getAttack())
+                ),
+                this);
+        passOnToNext(() -> RequestType.HEAL, this);
     }
 }

@@ -1,12 +1,13 @@
 package org.softserve.game.units;
 
 import org.softserve.game.Sun;
+import org.softserve.game.events.cor.RequestType;
 import org.softserve.game.events.Publisher;
 
 public class Vampire extends Warrior{
-    private static int MAX_HEALTH = 40;
-    private static int ATTACK = 4;
-    private static int VAMPIRISM = 50;
+    private int maxHealth = 40;
+    private int attack = 4;
+    private int vampirism = 50;
 
     public Vampire(){
         super(40);
@@ -14,33 +15,34 @@ public class Vampire extends Warrior{
 
     @Override
     public int getMaxHealth() {
-        return MAX_HEALTH;
+        return maxHealth;
     }
 
     @Override
     public int getAttack() {
-        return ATTACK;
+        return attack;
     }
 
-    public static int getVampirism() {
-        return VAMPIRISM;
+    public int getVampirism() {
+        return vampirism;
     }
 
     @Override
     public void hits(Unit enemy) {
         int initialHealth = enemy.getHealth();
         super.hits(enemy);
-        this.setHealth(Math.min(MAX_HEALTH, (getHealth() + ((initialHealth - enemy.getHealth()) * getVampirism()/100))));
+        this.setHealth(Math.min(maxHealth, (getHealth() + ((initialHealth - enemy.getHealth()) * getVampirism()/100))));
+        passOnToNext(() -> RequestType.HEAL, this);
     }
 
     private void applySunStats(){
         if(Sun.getInstance().getTime().equals(Sun.DayTime.DAY)){
-            MAX_HEALTH = 40;
-            ATTACK = 4;
+            maxHealth = 40;
+            attack = 4;
         }
         else {
-            MAX_HEALTH = 50;
-            ATTACK = 6;
+            maxHealth = 50;
+            attack = 6;
         }
     }
 

@@ -17,9 +17,9 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 class ArmyTest {
 
     @ParameterizedTest(name = "{index}. {0}")
-    @DisplayName("Basic army interactions")
-    @MethodSource("armiesProvider")
-    void tests(
+    @DisplayName("Army column battles")
+    @MethodSource("columnBattlesArmiesProvider")
+    void columnBattleTests(
             String testName,
             Army attackers,
             int[] attackersCounts,
@@ -41,7 +41,7 @@ class ArmyTest {
 
     }
 
-    static Stream<Arguments> armiesProvider(){
+    static Stream<Arguments> columnBattlesArmiesProvider(){
         return Stream.of(
                 arguments("Attackers: 1W|2K; Defenders: 2W => Win",
                           new Army(), new int[]{1, 2}, new Supplier[]{Warrior::new, Knight::new},
@@ -51,8 +51,8 @@ class ArmyTest {
                           new Army(), new int[]{2}, new Supplier[]{Warrior::new},
                           new Army(), new int[]{3}, new Supplier[]{Warrior::new}, 
                           false),
-                arguments("Attackers: 5W; Defenders: 7W => Loss", new Army(),
-                          new int[]{5}, new Supplier[]{Warrior::new},
+                arguments("Attackers: 5W; Defenders: 7W => Loss",
+                          new Army(), new int[]{5}, new Supplier[]{Warrior::new},
                           new Army(), new int[]{7}, new Supplier[]{Warrior::new}, 
                           false),
                 arguments("Attackers: 20W; Defenders: 21W => Win",
@@ -82,7 +82,89 @@ class ArmyTest {
                 arguments("Attackers: 10W|5D; Defenders: 2D|5W => Loss",
                         new Army(), new int[]{1, 1}, new Supplier[]{Warrior::new, Defender::new},
                         new Army(), new int[]{2, 5}, new Supplier[]{Defender::new, Warrior::new},
-                        false)
+                        false),
+                arguments("Attackers: 5D|6V|7W; Defenders: 6W|6D|6V => Loss",
+                        new Army(), new int[]{5, 6, 7}, new Supplier[]{Defender::new, Vampire::new, Warrior::new},
+                        new Army(), new int[]{6, 6, 6}, new Supplier[]{Warrior::new, Defender::new, Vampire::new},
+                        false),
+                arguments("Attackers: 2D|3V|4W; Defenders: 4W|4D|3V => Loss",
+                        new Army(), new int[]{2, 3, 4}, new Supplier[]{Defender::new, Vampire::new, Warrior::new},
+                        new Army(), new int[]{4, 4, 3}, new Supplier[]{Warrior::new, Defender::new, Vampire::new},
+                        false),
+                arguments("Attackers: 11D|3V|4W; Defenders: 4W|4D|13V => Win",
+                        new Army(), new int[]{11, 4, 4}, new Supplier[]{Defender::new, Vampire::new, Warrior::new},
+                        new Army(), new int[]{4, 4, 13}, new Supplier[]{Warrior::new, Defender::new, Vampire::new},
+                        true),
+                arguments("Attackers: 9D|3V|8W; Defenders: 4W|4D|13V => Win",
+                        new Army(), new int[]{8, 3, 8}, new Supplier[]{Defender::new, Vampire::new, Warrior::new},
+                        new Army(), new int[]{4, 4, 13}, new Supplier[]{Warrior::new, Defender::new, Vampire::new},
+                        true),
+                arguments("Attackers: 5L|3V|4W|2D; Defenders: 4W|4D|6V|5L => Loss",
+                        new Army(), new int[]{5, 3, 4, 2}, new Supplier[]{Lancer::new, Vampire::new, Warrior::new, Defender::new},
+                        new Army(), new int[]{4, 4, 6, 5}, new Supplier[]{Warrior::new, Defender::new, Vampire::new, Lancer::new},
+                        false),
+                arguments("Attackers: 7L|3V|4W|2D; Defenders: 4W|4D|6V|4L => Win",
+                        new Army(), new int[]{7, 3, 4, 2}, new Supplier[]{Lancer::new, Vampire::new, Warrior::new, Defender::new},
+                        new Army(), new int[]{4, 4, 6, 4}, new Supplier[]{Warrior::new, Defender::new, Vampire::new, Lancer::new},
+                        true),
+                arguments("Attackers: 2W; Defenders: 1L|1W => Loss",
+                        new Army(), new int[]{2}, new Supplier[]{Warrior::new},
+                        new Army(), new int[]{1, 2}, new Supplier[]{Lancer::new, Warrior::new},
+                        false),
+                arguments("Attackers: 7L|3V|1H|4W|1H|2D; Defenders: 2D|4W|4D|1H|6V|4L => Win",
+                        new Army(), new int[]{7, 3, 1, 4, 1, 2}, new Supplier[]{Lancer::new, Vampire::new, Healer::new, Warrior::new, Healer::new, Defender::new},
+                        new Army(), new int[]{2, 4, 4, 1, 6, 4}, new Supplier[]{Defender::new, Warrior::new, Defender::new, Healer::new, Vampire::new, Lancer::new},
+                        true),
+                arguments("Attackers: 1L|3W|1H|4W|1H|2K; Defenders: 4W|4D|1H|6V|4L => Win",
+                        new Army(), new int[]{7, 3, 1, 4, 1, 2}, new Supplier[]{Lancer::new, Vampire::new, Healer::new, Warrior::new, Healer::new, Defender::new},
+                        new Army(), new int[]{4, 4, 1, 6, 4}, new Supplier[]{Warrior::new, Defender::new, Healer::new, Vampire::new, Lancer::new},
+                        true)
+        );
+    }
+
+    @ParameterizedTest(name = "{index}. {0}")
+    @DisplayName("Army row battles")
+    @MethodSource("rowBattlesArmiesProvider")
+    void rowBattleTests(
+            String testName,
+            Army attackers,
+            int[] attackersCounts,
+            Supplier<Unit>[] attackerBarracks,
+            Army defenders,
+            int[] defendersCounts,
+            Supplier<Unit>[] DefendersBarracks,
+            boolean expectedBattleResult
+    ){
+        //Arrange section
+        attackers.addUnits(attackerBarracks, attackersCounts);
+        defenders.addUnits(DefendersBarracks, defendersCounts);
+
+        //Action section
+        boolean battleResult = Battle.straightFight(attackers, defenders);
+
+        //Assert section
+        assertEquals(expectedBattleResult, battleResult);
+
+    }
+
+    static Stream<Arguments> rowBattlesArmiesProvider(){
+        return Stream.of(
+                arguments("Attackers: 5L|3V|4W|2D; Defenders: 4W|4D|6V|5L => Loss",
+                        new Army(), new int[]{5, 3, 4, 2}, new Supplier[]{Lancer::new, Vampire::new, Warrior::new, Defender::new},
+                        new Army(), new int[]{4, 4, 6, 5}, new Supplier[]{Warrior::new, Defender::new, Vampire::new, Lancer::new},
+                        false),
+                arguments("Attackers: 7L|3V|4W|2D; Defenders: 4W|4D|6V|4L => Win",
+                        new Army(), new int[]{7, 3, 4, 2}, new Supplier[]{Lancer::new, Vampire::new, Warrior::new, Defender::new},
+                        new Army(), new int[]{4, 4, 6, 4}, new Supplier[]{Warrior::new, Defender::new, Vampire::new, Lancer::new},
+                        true),
+                arguments("Attackers: 7L|3V|1H|4W|1H|2D; Defenders: 4W|4D|1H|6V|4L => Loss",
+                        new Army(), new int[]{7, 3, 1, 4, 1, 2}, new Supplier[]{Lancer::new, Vampire::new, Healer::new, Warrior::new, Healer::new, Defender::new},
+                        new Army(), new int[]{4, 4, 1, 6, 4}, new Supplier[]{Warrior::new, Defender::new, Healer::new, Vampire::new, Lancer::new},
+                        false),
+                arguments("Attackers: 4L|3W|1H|4W|1H|2K; Defenders: 4W|4D|1H|2V|4L => Win",
+                        new Army(), new int[]{4, 3, 1, 4, 1, 2}, new Supplier[]{Lancer::new, Warrior::new, Healer::new, Warrior::new, Healer::new, Knight::new},
+                        new Army(), new int[]{4, 4, 1, 2, 4}, new Supplier[]{Warrior::new, Defender::new, Healer::new, Vampire::new, Lancer::new},
+                        true)
         );
     }
 
@@ -158,13 +240,13 @@ class ArmyTest {
 
 
         assertFalse(Battle.fight(myArmy, enemyArmy));
-        assertTrue(Battle.fight(army3, army4));
+        assertFalse(Battle.fight(army3, army4));
         assertFalse(Battle.straightFight(army5, army6));
     }
 
     @Nested
     @DisplayName("Lining up behavior")
-    class LineUpBehavior{
+    class LineUpBehaviorTests {
         @Test
         @DisplayName("Default lineup")
         void defaultLineup(){
