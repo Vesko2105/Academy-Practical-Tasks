@@ -4,9 +4,9 @@ import org.softserve.game.damage.Damage;
 import org.softserve.game.damage.SimpleDamage;
 
 public class Defender extends Warrior{
-    private static int MAX_HEALTH = 60;
-    private static int ATTACK = 3;
-    private static int DEFENSE = 2;
+    private int maxHealth = 60;
+    private int attack = 3;
+    private int defense = 2;
 
     public Defender(){
         super(60);
@@ -14,16 +14,16 @@ public class Defender extends Warrior{
 
     @Override
     public int getMaxHealth() {
-        return MAX_HEALTH;
+        return maxHealth;
     }
 
     @Override
     public int getAttack() {
-        return ATTACK;
+        return attack;
     }
 
-    public static int getDefence() {
-        return DEFENSE;
+    public int getDefence() {
+        return defense;
     }
 
     @Override

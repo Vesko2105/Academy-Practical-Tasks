@@ -1,4 +1,4 @@
-package org.softserve.game.events;
+package org.softserve.game.events.cor;
 
 public interface Handler {
     void setNext(Handler nextHandler);

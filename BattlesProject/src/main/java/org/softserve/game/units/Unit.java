@@ -1,21 +1,21 @@
 package org.softserve.game.units;
 
 import org.softserve.game.damage.Damage;
-import org.softserve.game.events.Handler;
+import org.softserve.game.damage.SimpleDamage;
+import org.softserve.game.events.cor.*;
 import org.softserve.game.events.Publisher;
-import org.softserve.game.events.Request;
 import org.softserve.game.events.Subscriber;
 
 public class Unit implements Handler, Subscriber {
-    private static int MAX_HEALTH = 50;
+    private int maxHealth = 50;
     private int health;
-    private  Handler nextHandler;
+    private Handler nextHandler;
 
-    public Unit(){
+    public Unit() {
         this(50);
     }
 
-    protected Unit(int health){
+    protected Unit(int health) {
         this.health = health;
     }
 
@@ -23,8 +23,8 @@ public class Unit implements Handler, Subscriber {
         return health;
     }
 
-    public int getMaxHealth(){
-        return MAX_HEALTH;
+    public int getMaxHealth() {
+        return maxHealth;
     }
 
     protected void setHealth(int health) {
@@ -35,8 +35,8 @@ public class Unit implements Handler, Subscriber {
         return health > 0;
     }
 
-    public void hits(Unit enemy){
-        //throw new UnsupportedOperationException();
+    public void hits(Unit enemy) {
+        //TO-DO (For example: throw new UnsupportedOperationException();)
     }
 
     protected void hitBy(Damage damage) {
@@ -50,26 +50,45 @@ public class Unit implements Handler, Subscriber {
 
     @Override
     public void handle(Request request, Handler sender) {
-        if(request != null && nextHandler != null)
-        {
-            if(request.equals(Request.HEAL) && !isAlive()){
-                nextHandler.handle(request, sender);
-                return;
+        if (request != null) {
+            switch (request.getType()) {
+                case RECEIVE_DMG:
+                    DamageRequest damageRequest = (DamageRequest) request;
+                    hitBy(damageRequest.getDamage());
+                    break;
+                case PIERCE_HIT:
+                    PierceHitRequest pierceHitRequest = (PierceHitRequest) request;
+                    int healthBefore = getHealth();
+                    hitBy(pierceHitRequest.getDamage());
+                    if(!pierceHitRequest.isAtLast()) {
+                        int healthAfter = Math.max(0, getHealth());
+                        Damage damageReceived = new SimpleDamage(healthBefore - healthAfter);
+                        passOnToNext(pierceHitRequest.goThrough(damageReceived), sender);
+                    }
+                    break;
+                case HEAL:
+                    if (isAlive())
+                        passOnToNext(() -> RequestType.HEAL, this);
+                    else
+                        passOnToNext(() -> RequestType.HEAL, sender);
+                    break;
+                default:
+                    passOnToNext(request, this);
             }
-            nextHandler.handle(request, this);
         }
     }
 
-    public Handler getNext(){
-        return nextHandler;
+    public void passOnToNext(Request request, Handler sender) {
+        if (nextHandler != null)
+            nextHandler.handle(request, sender);
     }
 
-    protected boolean canHandle(Request request){
-        return false;
+    public Handler getNext() {
+        return nextHandler;
     }
 
     @Override
     public void update(Publisher publisher) {
-
+        //TO-DO
     }
 }
